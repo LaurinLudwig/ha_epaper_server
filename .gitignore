@@ -1,0 +1,25 @@
+# --- Zugangsdaten: NIEMALS einchecken -------------------------------------
+# Enthält den langlebigen Home-Assistant-Token. Ein einmal gepushter Token
+# gilt als kompromittiert - auch wenn der Commit später entfernt wird.
+ha-token.txt
+
+# --- Laufzeitdaten ---------------------------------------------------------
+# Die eigene Dashboard-Konfiguration. Sie verraet ueber die Entitaetsnamen,
+# welche Geraete im Haushalt stehen - deshalb nur lokal. Als Vorlage dient
+# dashboard.example.json.
+dashboard.json
+# Sicherungskopie, die beim Speichern im Baukasten entsteht
+dashboard.json.bak
+# Zwischendatei des atomaren Speicherns
+dashboard.json.tmp
+# Messwerte vom Tablet, gerätespezifisch
+diag-report.json
+
+# --- Erste Fassung ---------------------------------------------------------
+# Nur lokal zum Nachschlagen, gehört nicht ins Repository
+legacy/
+
+# --- Sonstiges -------------------------------------------------------------
+node_modules/
+*.log
+.DS_Store

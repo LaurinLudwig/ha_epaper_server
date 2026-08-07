@@ -1,0 +1,229 @@
+/* Stylesheet fuer das Tolino Shine (Android 2.3.4, WebKit 533.1, E-Ink).
+ *
+ * Regeln, die aus dem Geraet folgen:
+ *   - kein position:fixed (vor Android 3.0 defekt)
+ *   - kein box-sizing ohne -webkit- (wirkt sonst gar nicht)
+ *   - kein overflow:auto zum Scrollen (nicht bedienbar)
+ *   - kein SVG (erst ab Android 3.0)
+ *   - keine Schatten/Radien: auf E-Ink unsichtbar, kosten nur Rechenzeit
+ *   - hell statt dunkel: weniger Pixel muessen umklappen -> weniger Ghosting
+ *   - wenige Graustufen: Zwischentoene ghosten am staerksten
+ *
+ * Schriftgroesse kommt inline aus den Einstellungen (settings.baseFontSize).
+ */
+
+body {
+  background: #ffffff;
+  color: #000000;
+  font-family: sans-serif;
+  margin: 0;
+  padding: 6px;
+}
+
+.grid {
+  margin: 0 auto;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* Eine Kachel besteht aus zwei uebereinanderliegenden Zellen (Titel + Inhalt).
+   Der Rahmen wird zwischen beiden aufgeteilt - Titelzelle ohne Unterkante,
+   Inhaltszelle ohne Oberkante -, sodass optisch ein Kasten entsteht. */
+td.tile-title {
+  border: 2px solid #000000;
+  border-bottom: 0;
+  padding: 10px 10px 0 10px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+td.tile-body {
+  border: 2px solid #000000;
+  border-top: 0;
+  padding: 0 10px 10px 10px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+/* Abstandhalter zwischen den Kacheln. */
+td.colgap {
+  width: 2%;
+}
+
+td.rowgap {
+  font-size: 10px;
+  line-height: 10px;
+  height: 10px;
+}
+
+.block-title {
+  font-size: 0.85em;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #000000;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+/* --- Sensorzeilen --- */
+
+.row {
+  margin-bottom: 10px;
+}
+
+.row-label {
+  font-size: 0.72em;
+  color: #666666;
+}
+
+.row-value {
+  font-size: 1.5em;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+.unit {
+  font-size: 0.55em;
+  font-weight: normal;
+}
+
+/* --- Grosse Einzelzahl --- */
+
+.bigvalue {
+  font-size: 2.4em;
+  font-weight: bold;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.bigvalue .unit {
+  font-size: 0.4em;
+}
+
+.clock-date {
+  font-size: 0.8em;
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* --- Wetter --- */
+
+.weather-top {
+  margin-bottom: 10px;
+}
+
+.weather-badge-cell {
+  width: 1%;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.weather-main-cell {
+  vertical-align: middle;
+  padding-left: 10px;
+}
+
+.weather-temp-cell {
+  text-align: right;
+  font-size: 1.6em;
+  font-weight: bold;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.badge {
+  border: 2px solid #000000;
+  background: #000000;
+  color: #ffffff;
+  font-size: 0.68em;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.badge.small {
+  font-size: 0.55em;
+  padding: 4px 2px;
+  letter-spacing: 0;
+}
+
+.weather-condition {
+  font-size: 1.15em;
+  font-weight: bold;
+}
+
+.weather-name {
+  font-size: 0.68em;
+  color: #666666;
+}
+
+.forecast {
+  border-top: 1px solid #000000;
+  padding-top: 8px;
+}
+
+.forecast-day {
+  text-align: center;
+  vertical-align: top;
+  padding: 8px 3px 0 3px;
+}
+
+.forecast-weekday {
+  font-size: 0.75em;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.forecast-high {
+  font-size: 1.05em;
+  font-weight: bold;
+  margin-top: 6px;
+}
+
+.forecast-low {
+  font-size: 0.72em;
+  color: #666666;
+}
+
+.forecast-rain {
+  font-size: 0.6em;
+  color: #666666;
+  margin-top: 2px;
+}
+
+/* --- Text / Zustaende --- */
+
+.note {
+  font-size: 0.9em;
+  line-height: 1.35;
+}
+
+.note.large {
+  font-size: 1.4em;
+  font-weight: bold;
+  line-height: 1.25;
+}
+
+.muted {
+  color: #666666;
+  font-size: 0.75em;
+  text-align: center;
+  padding: 14px 0;
+}
+
+.error {
+  font-size: 0.72em;
+  line-height: 1.3;
+  border: 1px solid #000000;
+  padding: 6px;
+}
+
+.foot {
+  font-size: 0.62em;
+  color: #666666;
+  text-align: center;
+  margin-top: 8px;
+  padding-bottom: 4px;
+}

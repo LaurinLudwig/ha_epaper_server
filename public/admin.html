@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard-Baukasten</title>
+<link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+
+<header class="topbar">
+  <h1>Dashboard-Baukasten</h1>
+  <div class="topbar-actions">
+    <span id="status" class="status"></span>
+    <button id="btnReload" class="btn">Verwerfen</button>
+    <button id="btnSave" class="btn btn-primary">Speichern</button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <section class="col col-list">
+    <h2>Bausteine</h2>
+    <ul id="blockList" class="block-list"></ul>
+
+    <div class="add-row">
+      <select id="newBlockType"></select>
+      <button id="btnAdd" class="btn">Hinzufügen</button>
+    </div>
+
+    <h2>Einstellungen</h2>
+    <div id="settingsForm" class="form"></div>
+  </section>
+
+  <section class="col col-editor">
+    <h2 id="editorTitle">Baustein</h2>
+    <div id="editorForm" class="form">
+      <p class="hint">Links einen Baustein auswählen.</p>
+    </div>
+  </section>
+
+  <section class="col col-preview">
+    <h2>Vorschau</h2>
+    <div class="preview-controls">
+      <label>Breite
+        <select id="previewWidth">
+          <option value="758">758 px (Tolino, 1:1)</option>
+          <option value="505">505 px (Tolino bei hdpi-Skalierung)</option>
+          <option value="600">600 px</option>
+          <option value="800">800 px</option>
+          <option value="1024">1024 px</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="previewGray" checked> Graustufen</label>
+      <button id="btnPreview" class="btn btn-small">Aktualisieren</button>
+    </div>
+    <div class="preview-hint">
+      Simulation im modernen Browser — die endgültige Kontrolle macht
+      <code>/diag</code> auf dem Gerät selbst.
+    </div>
+    <div id="previewWrap" class="preview-wrap">
+      <iframe id="previewFrame" class="preview-frame" title="Vorschau"></iframe>
+    </div>
+  </section>
+
+</main>
+
+<div id="pickerBackdrop" class="backdrop hidden">
+  <div class="picker">
+    <div class="picker-head">
+      <input type="text" id="pickerSearch" placeholder="Suchen: Name, Entity-ID, Einheit …" autocomplete="off">
+      <button id="pickerClose" class="btn btn-small">Schließen</button>
+    </div>
+    <div id="pickerDomains" class="picker-domains"></div>
+    <div id="pickerList" class="picker-list"></div>
+  </div>
+</div>
+
+<script src="/admin.js"></script>
+</body>
+</html>

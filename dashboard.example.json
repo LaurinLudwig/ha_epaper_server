@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "settings": {
+    "title": "Home Dashboard",
+    "timezone": "Europe/Berlin",
+    "refreshSeconds": 60,
+    "contentWidth": 0,
+    "baseFontSize": 34,
+    "deviceDpi": true,
+    "showFooter": true
+  },
+  "blocks": [
+    {
+      "id": "bclock",
+      "type": "clock",
+      "width": "full",
+      "title": "Uhrzeit",
+      "showTime": true,
+      "showDate": true
+    },
+    {
+      "id": "bweather",
+      "type": "weather",
+      "width": "full",
+      "title": "",
+      "entity": "weather.forecast_home",
+      "days": 4,
+      "showPrecipitation": true
+    },
+    {
+      "id": "bsensors",
+      "type": "sensors",
+      "width": "half",
+      "title": "Beispielwerte",
+      "rows": [
+        {
+          "label": "Leistung",
+          "entity": "sensor.beispiel_leistung",
+          "unit": "",
+          "decimals": 0
+        },
+        {
+          "label": "Tagesenergie",
+          "entity": "sensor.beispiel_tagesenergie",
+          "unit": "",
+          "decimals": 0
+        }
+      ]
+    },
+    {
+      "id": "bbig",
+      "type": "bigvalue",
+      "width": "half",
+      "title": "Füllstand",
+      "entity": "sensor.beispiel_fuellstand",
+      "unit": "",
+      "decimals": 0
+    }
+  ]
+}
