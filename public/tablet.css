@@ -7,7 +7,9 @@
  *   - kein SVG (erst ab Android 3.0)
  *   - keine Schatten/Radien: auf E-Ink unsichtbar, kosten nur Rechenzeit
  *   - hell statt dunkel: weniger Pixel muessen umklappen -> weniger Ghosting
- *   - wenige Graustufen: Zwischentoene ghosten am staerksten
+ *   - wenige Graustufen: Zwischentoene ghosten am staerksten. Genau ZWEI
+ *     Textfarben: #000 fuer Werte, #444 fuer Beschriftungen. #444 statt des
+ *     naheliegenderen #666, weil E-Ink helle Graustufen schwach darstellt.
  *
  * Schriftgroesse kommt inline aus den Einstellungen (settings.baseFontSize).
  */
@@ -74,7 +76,7 @@ td.rowgap {
 
 .row-label {
   font-size: 0.72em;
-  color: #666666;
+  color: #444444;
 }
 
 .row-value {
@@ -186,7 +188,7 @@ a.nav-button.active {
 
 .weather-name {
   font-size: 0.68em;
-  color: #666666;
+  color: #444444;
 }
 
 .forecast {
@@ -214,12 +216,12 @@ a.nav-button.active {
 
 .forecast-low {
   font-size: 0.72em;
-  color: #666666;
+  color: #444444;
 }
 
 .forecast-rain {
   font-size: 0.6em;
-  color: #666666;
+  color: #444444;
   margin-top: 2px;
 }
 
@@ -237,7 +239,7 @@ a.nav-button.active {
 }
 
 .muted {
-  color: #666666;
+  color: #444444;
   font-size: 0.75em;
   text-align: center;
   padding: 14px 0;
@@ -252,7 +254,7 @@ a.nav-button.active {
 
 .foot {
   font-size: 0.62em;
-  color: #666666;
+  color: #444444;
   text-align: center;
   margin-top: 8px;
   padding-bottom: 4px;
