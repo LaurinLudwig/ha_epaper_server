@@ -186,6 +186,11 @@ wird in `security.json` (Vorlage: `security.example.json`) — **nicht** in
 Der Tolino kann kein Passwort eingeben, also wird er über seine Adresse
 erkannt. Betrifft `/`, `/d/<id>`, `/action` und `/diag`.
 
+**Nicht** betroffen ist `/tablet.css`: die Datei wird auch von der Vorschau
+im Baukasten geladen — also von der IP des Admin-Rechners, nicht des
+Tablets. Stünde sie unter dem Filter, käme die Vorschau ohne jede
+Formatierung an. Sie enthält nur Gestaltungsregeln, keine Daten.
+
 ```json
 { "dashboardAllow": ["192.168.178.62", "192.168.178.0/24"] }
 ```
@@ -195,7 +200,8 @@ unvollständige Konfiguration sperrt niemanden aus. Änderungen wirken
 sofort, ohne Neustart.
 
 Nur die Tablet-IP einzutragen ist am dichtesten, dann kommst du aber selbst
-nicht mehr per Browser ans Dashboard. Ergänze dafür deinen Rechner oder
+nicht mehr per Browser ans Dashboard — die Vorschau im Baukasten funktioniert
+zwar weiter, `/` und `/d/<id>` nicht. Ergänze dafür deinen Rechner oder
 gleich das ganze Subnetz.
 
 ### Baukasten: Anmeldung

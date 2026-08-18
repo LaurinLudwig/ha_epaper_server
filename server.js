@@ -140,9 +140,18 @@ const server = http.createServer(function (req, res) {
   const ADMIN_ROUTES = ["/admin", "/admin/login", "/admin/logout", "/admin.css",
     "/admin.js", "/api/schema", "/api/config", "/api/entities", "/preview"];
 
-  const isAdminRoute = ADMIN_ROUTES.indexOf(route) !== -1;
+  // Stylesheets sind weder Dashboard noch Baukasten, sondern werden von
+  // BEIDEN gebraucht: das Tablet laedt tablet.css, und die Vorschau im
+  // Baukasten laedt dieselbe Datei - von der IP des Admin-Rechners.
+  // Stuende sie unter dem IP-Filter, kaeme die Vorschau ohne Formatierung
+  // an. Sie enthaelt keine Daten, nur Gestaltungsregeln.
+  const PUBLIC_ROUTES = ["/tablet.css"];
 
-  if (!isAdminRoute && !access.isAllowedIp(clientIp, rules.dashboardAllow)) {
+  const isAdminRoute = ADMIN_ROUTES.indexOf(route) !== -1;
+  const isPublicRoute = PUBLIC_ROUTES.indexOf(route) !== -1;
+
+  if (!isAdminRoute && !isPublicRoute &&
+      !access.isAllowedIp(clientIp, rules.dashboardAllow)) {
     console.warn("Dashboard-Zugriff abgelehnt von " + clientIp + " auf " + route);
     sendText(res, 403, "text/plain; charset=utf-8",
       "Zugriff von dieser Adresse nicht erlaubt (" + clientIp + ")");
