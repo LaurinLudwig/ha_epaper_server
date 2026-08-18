@@ -100,7 +100,8 @@ td.nav-cell {
   padding: 3px;
 }
 
-a.nav-button {
+a.nav-button,
+span.nav-button {
   display: block;
   border: 2px solid #000000;
   padding: 18px 6px;
@@ -115,7 +116,8 @@ a.nav-button {
 }
 
 /* Aktives Dashboard invertiert - auf Graustufen der deutlichste Unterschied. */
-a.nav-button.active {
+a.nav-button.active,
+span.nav-button.active {
   background: #000000;
   color: #ffffff;
 }
@@ -130,7 +132,8 @@ form.action-form {
 
 /* Wie die Nav-Buttons: grosse Trefflaeche, ganzes Element klickbar.
    <button> statt <a>, weil die Aktion per POST laufen muss. */
-button.action-button {
+button.action-button,
+span.action-button {
   display: block;
   width: 100%;
   border: 2px solid #000000;
@@ -148,7 +151,8 @@ button.action-button {
 
 /* Eingeschaltet invertiert - auf Graustufen der deutlichste Unterschied,
    und aus der Entfernung ohne Lesen erkennbar. */
-button.action-button.on {
+button.action-button.on,
+span.action-button.on {
   background: #000000;
   color: #ffffff;
 }

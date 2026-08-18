@@ -186,6 +186,11 @@ wird in `security.json` (Vorlage: `security.example.json`) — **nicht** in
 Der Tolino kann kein Passwort eingeben, also wird er über seine Adresse
 erkannt. Betrifft `/`, `/d/<id>`, `/action` und `/diag`.
 
+In der **Vorschau** sind Navigations- und Schaltbuttons bewusst inaktiv:
+optisch identisch, aber ohne Ziel. Sonst würde ein Klick das iframe auf
+eine Dashboard-Route führen (die unter dem IP-Filter liegt) oder beim
+Zusammenbauen versehentlich in Home Assistant schalten.
+
 **Nicht** betroffen ist `/tablet.css`: die Datei wird auch von der Vorschau
 im Baukasten geladen — also von der IP des Admin-Rechners, nicht des
 Tablets. Stünde sie unter dem Filter, käme die Vorschau ohne jede
@@ -198,6 +203,12 @@ Formatierung an. Sie enthält nur Gestaltungsregeln, keine Daten.
 Einzeladressen und CIDR-Bereiche. **Leere Liste = Filter aus** — eine
 unvollständige Konfiguration sperrt niemanden aus. Änderungen wirken
 sofort, ohne Neustart.
+
+Einzutragen ist die Adresse, von der ein Gerät **sendet** — nicht die, die
+man in der Adresszeile aufruft (das ist die des Servers). Bei einer
+Ablehnung nennt die Fehlermeldung die tatsächlich gesehene IP; die gehört
+in die Liste. Im Log steht sie ebenfalls:
+`Dashboard-Zugriff abgelehnt von <ip> auf <route>`.
 
 Nur die Tablet-IP einzutragen ist am dichtesten, dann kommst du aber selbst
 nicht mehr per Browser ans Dashboard — die Vorschau im Baukasten funktioniert
