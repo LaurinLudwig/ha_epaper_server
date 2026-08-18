@@ -3,6 +3,9 @@
 # gilt als kompromittiert - auch wenn der Commit später entfernt wird.
 ha-token.txt
 
+# Zugriffsrechte: enthaelt Passwort-Hash und die IPs des Heimnetzes
+security.json
+
 # --- Laufzeitdaten ---------------------------------------------------------
 # Die eigene Dashboard-Konfiguration. Sie verraet ueber die Entitaetsnamen,
 # welche Geraete im Haushalt stehen - deshalb nur lokal. Als Vorlage dient

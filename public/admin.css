@@ -281,3 +281,9 @@ input:focus, select:focus, textarea:focus { outline: 2px solid #93c5fd; outline-
   background: #fafafa;
 }
 .targets-editor label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 400; }
+
+.btn-logout {
+  text-decoration: none;
+  display: inline-block;
+  line-height: 1.3;
+}

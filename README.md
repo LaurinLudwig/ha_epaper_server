@@ -172,9 +172,54 @@ Doppeltippen ab — auf E-Ink sieht man den ersten Tipp erst nach dem
 Seitenaufbau. Gegen die Meta-Refresh-Wiederholung hilft sie **nicht**, das
 kann nur POST + Weiterleitung.
 
-> Es gibt weiterhin **kein Passwort**. Wer im LAN ist, kann die freigegebenen
-> Aktionen auslösen und über `/admin` weitere hinzufügen. Gib deshalb nur
-> frei, was unkritisch ist.
+> Wer über eine freigegebene IP zugreift, kann die freigegebenen Aktionen
+> auslösen — siehe „Zugriffsschutz". Gib deshalb nur frei, was unkritisch ist.
+
+## Zugriffsschutz
+
+Zwei getrennte Schichten, weil die Clients unterschiedlich sind. Konfiguriert
+wird in `security.json` (Vorlage: `security.example.json`) — **nicht** in
+`dashboard.json`, damit der Baukasten die Rechte nie überschreiben kann.
+
+### Dashboard: IP-Whitelist
+
+Der Tolino kann kein Passwort eingeben, also wird er über seine Adresse
+erkannt. Betrifft `/`, `/d/<id>`, `/action` und `/diag`.
+
+```json
+{ "dashboardAllow": ["192.168.178.62", "192.168.178.0/24"] }
+```
+
+Einzeladressen und CIDR-Bereiche. **Leere Liste = Filter aus** — eine
+unvollständige Konfiguration sperrt niemanden aus. Änderungen wirken
+sofort, ohne Neustart.
+
+Nur die Tablet-IP einzutragen ist am dichtesten, dann kommst du aber selbst
+nicht mehr per Browser ans Dashboard. Ergänze dafür deinen Rechner oder
+gleich das ganze Subnetz.
+
+### Baukasten: Anmeldung
+
+```bash
+node tools/set-admin-password.js "meinPasswort"
+node tools/set-admin-password.js --entfernen
+```
+
+Gespeichert wird nur ein scrypt-Hash mit zufälligem Salt. Die Sitzung liegt
+im Speicher des Servers — nach einem Neustart ist eine neue Anmeldung nötig.
+Betrifft `/admin`, `/preview` und alle `/api/*`; die API antwortet mit
+`401` statt einer HTML-Seite.
+
+### Grenzen
+
+Die IP-Whitelist ist **kein** Ersatz für Authentifizierung: im selben LAN
+lässt sich eine IP fälschen oder nach dem Abschalten des Tablets übernehmen.
+Sie hebt die Hürde und schützt gegen Gäste und Zufallszugriffe — mehr nicht.
+Für die Schaltaktionen ist das der Grund, weiterhin nur Unkritisches
+freizugeben.
+
+Weitergeleitete Header (`X-Forwarded-For`) werden bewusst ignoriert, weil
+kein Proxy davorsteht und sie sonst frei fälschbar wären.
 
 ## Zeitzone
 
@@ -211,16 +256,17 @@ lib/format.js          Zahlen-, Zeit- und Wetterformatierung
 lib/html.js            HTML-Escaping
 lib/diag.js            Geräte-Diagnoseseite
 lib/actions.js         Schaltaktionen: Whitelist und Zeitsperre
+lib/access.js          IP-Pruefung, Passwort-Hashing, Sitzungen
+lib/security-config.js security.json laden/speichern
+lib/login.js           Anmeldemaske
 public/tablet.css      Stylesheet fürs Tolino
 public/admin.*         Baukasten-Oberfläche (moderner Browser)
 tools/legacy-check.js  Kompatibilitätsprüfung
+tools/set-admin-password.js  Passwort für /admin setzen
 dashboard.example.json Vorlage für die eigene dashboard.json
 ```
 
 ## Offen
 
-- Kein Passwortschutz. Im LAN kann jeder `/admin` öffnen, das Dashboard
-  umbauen, über den Entitäts-Picker alle HA-Entitäten sehen und die
-  freigegebenen Schaltaktionen auslösen.
 - Rasterbreite und Schriftgrößen sind vorläufig, bis `/diag` auf dem Gerät
   gelaufen ist.

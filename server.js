@@ -9,6 +9,9 @@ const configStore = require("./lib/config");
 const render = require("./lib/render");
 const diag = require("./lib/diag");
 const actions = require("./lib/actions");
+const access = require("./lib/access");
+const security = require("./lib/security-config");
+const login = require("./lib/login");
 const { BLOCK_TYPES, schema } = require("./lib/blocks");
 
 const PORT = Number(process.env.PORT) || 8080;
@@ -123,6 +126,90 @@ const server = http.createServer(function (req, res) {
   }
 
   const route = url.pathname;
+  const clientIp = access.normalizeIp(req.socket.remoteAddress);
+  const rules = security.load();
+
+  // --- Zugriffskontrolle --------------------------------------------------
+  //
+  // Zwei getrennte Schichten, weil die Clients unterschiedlich sind:
+  //   Dashboard  -> IP-Whitelist  (der Tolino kann kein Passwort eingeben)
+  //   Baukasten  -> Anmeldung     (davor sitzt ein normaler Browser)
+  //
+  // /action zaehlt zum Dashboard: der Tolino muss schalten koennen.
+
+  const ADMIN_ROUTES = ["/admin", "/admin/login", "/admin/logout", "/admin.css",
+    "/admin.js", "/api/schema", "/api/config", "/api/entities", "/preview"];
+
+  const isAdminRoute = ADMIN_ROUTES.indexOf(route) !== -1;
+
+  if (!isAdminRoute && !access.isAllowedIp(clientIp, rules.dashboardAllow)) {
+    console.warn("Dashboard-Zugriff abgelehnt von " + clientIp + " auf " + route);
+    sendText(res, 403, "text/plain; charset=utf-8",
+      "Zugriff von dieser Adresse nicht erlaubt (" + clientIp + ")");
+    return;
+  }
+
+  // Anmeldemaske und Abmelden muessen ohne Sitzung erreichbar sein.
+  if (isAdminRoute && route !== "/admin/login" && rules.adminPassword &&
+      !access.hasValidSession(req)) {
+    // Die API antwortet mit 401 statt HTML - sonst wuerde der Baukasten
+    // eine Login-Seite als JSON zu parsen versuchen.
+    if (route.indexOf("/api/") === 0 || route === "/preview") {
+      sendJson(res, 401, { error: "Nicht angemeldet" });
+      return;
+    }
+
+    sendText(res, 200, "text/html; charset=utf-8", login.renderPage({}));
+    return;
+  }
+
+  // --- Anmeldung ----------------------------------------------------------
+
+  if (route === "/admin/login") {
+    if (req.method !== "POST") {
+      sendText(res, 200, "text/html; charset=utf-8", login.renderPage({}));
+      return;
+    }
+
+    readBody(req, 4096, function (err, body) {
+      if (err) {
+        sendText(res, 413, "text/plain; charset=utf-8", err.message);
+        return;
+      }
+
+      const form = new URLSearchParams(body || "");
+      const password = form.get("password") || "";
+
+      if (!rules.adminPassword || !access.checkPassword(password, rules.adminPassword)) {
+        console.warn("Fehlgeschlagene Anmeldung von " + clientIp);
+        sendText(res, 401, "text/html; charset=utf-8",
+          login.renderPage({ error: "Falsches Passwort." }));
+        return;
+      }
+
+      const token = access.createSession();
+
+      console.log("Anmeldung erfolgreich von " + clientIp);
+      res.writeHead(303, {
+        "Location": "/admin",
+        "Set-Cookie": access.sessionCookie(token),
+        "Cache-Control": "no-store"
+      });
+      res.end();
+    });
+    return;
+  }
+
+  if (route === "/admin/logout") {
+    access.destroySession(req);
+    res.writeHead(303, {
+      "Location": "/admin",
+      "Set-Cookie": access.clearCookie(),
+      "Cache-Control": "no-store"
+    });
+    res.end();
+    return;
+  }
 
   // --- Tablet-Seite -------------------------------------------------------
 
@@ -373,6 +460,14 @@ server.listen(PORT, "0.0.0.0", function () {
   console.log("  Baukasten    : /admin");
   console.log("  Diagnose     : /diag   (auf dem Tolino öffnen)");
   console.log("Home Assistant : " + HA_URL);
+  const sec = security.load();
+
+  console.log("Dashboard-Zugriff: " + (sec.dashboardAllow.length
+    ? sec.dashboardAllow.join(", ")
+    : "OFFEN für alle (keine IP-Whitelist gesetzt)"));
+  console.log("Baukasten        : " + (sec.adminPassword
+    ? "Passwort gesetzt"
+    : "OFFEN (kein Passwort - node tools/set-admin-password.js)"));
   console.log("Dashboards     : " + config.dashboards.length);
 
   config.dashboards.forEach(function (dashboard) {

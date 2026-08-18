@@ -1,0 +1,12 @@
+{
+  "_hinweis": "Kopie nach security.json. Wird nie vom Baukasten geschrieben.",
+
+  "_dashboardAllow": "IPs/CIDR, die / , /d/<id> und /action sehen duerfen. Leere Liste = Filter aus.",
+  "dashboardAllow": [
+    "192.168.178.62",
+    "192.168.178.0/24"
+  ],
+
+  "_adminPassword": "Nicht von Hand setzen: node tools/set-admin-password.js \"passwort\"",
+  "adminPassword": null
+}
