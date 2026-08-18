@@ -125,8 +125,26 @@ const server = http.createServer(function (req, res) {
 
   // --- Tablet-Seite -------------------------------------------------------
 
+  // Rotation: welches Dashboard faellig ist, entscheidet die Uhrzeit.
   if (route === "/" || route === "/tablet") {
-    render.render(currentConfig(), { selfPath: route }, function (html) {
+    render.render(currentConfig(), {}, function (html) {
+      sendText(res, 200, "text/html; charset=utf-8", html);
+    });
+    return;
+  }
+
+  // Ein bestimmtes Dashboard, per Nav-Button aufgerufen. Die Rotation laeuft
+  // ab hier weiter - der Meta-Refresh zeigt auf den Nachfolger.
+  if (route.indexOf("/d/") === 0) {
+    const wanted = decodeURIComponent(route.slice(3));
+    const config = currentConfig();
+
+    if (!configStore.findDashboard(config, wanted)) {
+      sendText(res, 404, "text/plain; charset=utf-8", "Unbekanntes Dashboard");
+      return;
+    }
+
+    render.render(config, { dashboardId: wanted }, function (html) {
       sendText(res, 200, "text/html; charset=utf-8", html);
     });
     return;
@@ -156,14 +174,20 @@ const server = http.createServer(function (req, res) {
           return;
         }
 
-        render.render(draft, { noRefresh: true }, function (html) {
+        render.render(draft, {
+          noRefresh: true,
+          dashboardId: url.searchParams.get("d")
+        }, function (html) {
           sendText(res, 200, "text/html; charset=utf-8", html);
         });
       });
       return;
     }
 
-    render.render(currentConfig(), { noRefresh: true }, function (html) {
+    render.render(currentConfig(), {
+      noRefresh: true,
+      dashboardId: url.searchParams.get("d")
+    }, function (html) {
       sendText(res, 200, "text/html; charset=utf-8", html);
     });
     return;
@@ -228,7 +252,11 @@ const server = http.createServer(function (req, res) {
 
         try {
           const saved = configStore.save(incoming, BLOCK_TYPES);
-          console.log("Konfiguration gespeichert (" + saved.blocks.length + " Bausteine)");
+          const blockCount = saved.dashboards.reduce(function (sum, d) {
+            return sum + d.blocks.length;
+          }, 0);
+          console.log("Konfiguration gespeichert (" + saved.dashboards.length +
+            " Dashboards, " + blockCount + " Bausteine)");
           sendJson(res, 200, saved);
         } catch (saveErr) {
           console.error("Speichern fehlgeschlagen:", saveErr.message);
@@ -288,8 +316,13 @@ server.listen(PORT, "0.0.0.0", function () {
   console.log("  Baukasten    : /admin");
   console.log("  Diagnose     : /diag   (auf dem Tolino öffnen)");
   console.log("Home Assistant : " + HA_URL);
-  console.log("Bausteine      : " + config.blocks.length);
-  console.log("Reload alle    : " + config.settings.refreshSeconds + "s");
+  console.log("Dashboards     : " + config.dashboards.length);
+
+  config.dashboards.forEach(function (dashboard) {
+    console.log("  - " + dashboard.name + " (" + dashboard.blocks.length +
+      " Bausteine, " + dashboard.seconds + "s" +
+      (dashboard.inRotation ? "" : ", nicht in Rotation") + ")");
+  });
 
   if (!configStore.exists()) {
     console.log("Hinweis: dashboard.json existiert noch nicht - es gilt die " +

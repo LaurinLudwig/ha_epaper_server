@@ -63,9 +63,10 @@ startet trotzdem.
 
 | Pfad | Für wen | Zweck |
 |---|---|---|
-| `/` | Tolino | Das Dashboard. Reines HTML 4.01, kein JavaScript. |
+| `/` | Tolino | Rotation — zeigt das gerade fällige Dashboard. Reines HTML 4.01, kein JavaScript. |
+| `/d/<id>` | Tolino | Ein bestimmtes Dashboard (Ziel der Navigations-Buttons). |
 | `/admin` | PC/Handy | Baukasten: Bausteine anlegen, sortieren, konfigurieren. |
-| `/preview` | intern | Gleiches HTML wie `/`, ohne Selbst-Reload (fürs Vorschau-iframe). |
+| `/preview?d=<id>` | intern | Gleiches HTML wie `/`, ohne Selbst-Reload (fürs Vorschau-iframe). |
 | `/diag` | Tolino | Misst das Gerät aus und meldet die Werte an den Server. |
 | `/diag/result` | PC | Zeigt die empfangenen Messwerte als JSON. |
 
@@ -89,6 +90,25 @@ Daraus folgt:
 `node tools/legacy-check.js` prüft das erzeugte HTML und `tablet.css` gegen
 diese Regeln. Exit-Code 0 = sauber.
 
+## Mehrere Dashboards
+
+`dashboard.json` enthält eine Liste von Dashboards. Jedes hat einen Namen,
+eine Anzeigedauer und einen Schalter, ob es an der Rotation teilnimmt.
+
+Welches Dashboard gerade dran ist, ergibt sich **zustandslos** aus der
+Serverzeit modulo der Summe aller Anzeigedauern. Das ist Absicht: sonst
+würden mehrere Clients (Tablet plus offene Vorschau im Baukasten) sich
+gegenseitig weiterschalten.
+
+Der Baustein **Navigation** rendert einen Button je Dashboard. Ein Tipp
+springt zum Ziel und gibt ihm seine **volle** Anzeigedauer, bevor die
+Rotation weiterläuft — sonst landete man mitten im laufenden Intervall und
+die Seite wäre unter Umständen nach einer Sekunde wieder weg. Die Rotation
+wird dabei weder angehalten noch verlängert.
+
+Ein Dashboard mit `inRotation: false` erscheint nie automatisch, ist aber
+über Buttons und `/d/<id>` erreichbar.
+
 ## Bausteine
 
 Konfiguriert wird in `dashboard.json` (schreibt der Baukasten; Handeditieren
@@ -104,7 +124,7 @@ cp dashboard.example.json dashboard.json
 Ohne diese Datei startet der Server mit einer Minimalkonfiguration
 (Uhr + Hinweis auf `/admin`).
 
-Vorhandene Typen: `weather`, `sensors`, `bigvalue`, `clock`, `text`, `spacer`.
+Vorhandene Typen: `weather`, `sensors`, `bigvalue`, `clock`, `text`, `nav`, `spacer`.
 
 **Einen neuen Typ hinzufügen** = ein Eintrag in `lib/blocks.js`:
 
@@ -122,7 +142,7 @@ Daraus entstehen automatisch das Formular im Baukasten *und* die Ausgabe auf
 dem Tablet. Server und Admin-UI müssen dafür nicht angefasst werden.
 
 Feldtypen für `fields`: `text`, `textarea`, `number`, `entity`, `select`,
-`checkbox`, `rows`.
+`checkbox`, `rows`, `dashboards`.
 
 ## Zeitzone
 

@@ -1,60 +1,113 @@
 {
-  "version": 1,
+  "version": 2,
   "settings": {
     "title": "Home Dashboard",
     "timezone": "Europe/Berlin",
-    "refreshSeconds": 60,
     "contentWidth": 0,
     "baseFontSize": 34,
     "deviceDpi": true,
     "showFooter": true
   },
-  "blocks": [
+  "dashboards": [
     {
-      "id": "bclock",
-      "type": "clock",
-      "width": "full",
-      "title": "Uhrzeit",
-      "showTime": true,
-      "showDate": true
-    },
-    {
-      "id": "bweather",
-      "type": "weather",
-      "width": "full",
-      "title": "",
-      "entity": "weather.forecast_home",
-      "days": 4,
-      "showPrecipitation": true
-    },
-    {
-      "id": "bsensors",
-      "type": "sensors",
-      "width": "half",
-      "title": "Beispielwerte",
-      "rows": [
+      "id": "d1",
+      "name": "Übersicht",
+      "shortName": "",
+      "seconds": 30,
+      "inRotation": true,
+      "blocks": [
         {
-          "label": "Leistung",
+          "title": "Uhrzeit",
+          "showDate": true,
+          "showTime": true,
+          "id": "bclock",
+          "type": "clock",
+          "width": "full"
+        },
+        {
+          "title": "",
+          "entity": "weather.forecast_home",
+          "days": 4,
+          "showPrecipitation": true,
+          "id": "bweather",
+          "type": "weather",
+          "width": "full"
+        },
+        {
+          "title": "Beispielwerte",
+          "rows": [
+            {
+              "label": "Leistung",
+              "entity": "sensor.beispiel_leistung",
+              "unit": "",
+              "decimals": 0
+            },
+            {
+              "label": "Tagesenergie",
+              "entity": "sensor.beispiel_tagesenergie",
+              "unit": "",
+              "decimals": 0
+            }
+          ],
+          "id": "bsensors",
+          "type": "sensors",
+          "width": "half"
+        },
+        {
+          "title": "Füllstand",
+          "entity": "sensor.beispiel_fuellstand",
+          "unit": "",
+          "decimals": 0,
+          "id": "bbig",
+          "type": "bigvalue",
+          "width": "half"
+        },
+        {
+          "id": "bnav",
+          "type": "nav",
+          "width": "full",
+          "title": "",
+          "showLabels": true,
+          "highlightActive": true,
+          "targets": []
+        }
+      ]
+    },
+    {
+      "id": "d2",
+      "name": "Energie",
+      "shortName": "",
+      "seconds": 20,
+      "inRotation": true,
+      "blocks": [
+        {
+          "id": "e1",
+          "type": "bigvalue",
+          "width": "half",
+          "title": "Leistung",
           "entity": "sensor.beispiel_leistung",
           "unit": "",
           "decimals": 0
         },
         {
-          "label": "Tagesenergie",
+          "id": "e2",
+          "type": "bigvalue",
+          "width": "half",
+          "title": "Heute",
           "entity": "sensor.beispiel_tagesenergie",
           "unit": "",
           "decimals": 0
+        },
+        {
+          "id": "enav",
+          "type": "nav",
+          "width": "full",
+          "title": "",
+          "showLabels": true,
+          "highlightActive": true,
+          "targets": []
         }
       ]
-    },
-    {
-      "id": "bbig",
-      "type": "bigvalue",
-      "width": "half",
-      "title": "Füllstand",
-      "entity": "sensor.beispiel_fuellstand",
-      "unit": "",
-      "decimals": 0
     }
   ]
 }

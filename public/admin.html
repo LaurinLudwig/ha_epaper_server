@@ -20,6 +20,13 @@
 <main class="layout">
 
   <section class="col col-list">
+    <h2>Dashboards</h2>
+    <ul id="dashboardList" class="dashboard-list"></ul>
+    <div class="add-row">
+      <button id="btnAddDashboard" class="btn">+ Dashboard</button>
+    </div>
+    <div id="dashboardForm" class="form dashboard-form"></div>
+
     <h2>Bausteine</h2>
     <ul id="blockList" class="block-list"></ul>
 
@@ -55,8 +62,8 @@
       <button id="btnPreview" class="btn btn-small">Aktualisieren</button>
     </div>
     <div class="preview-hint">
-      Simulation im modernen Browser — die endgültige Kontrolle macht
-      <code>/diag</code> auf dem Gerät selbst.
+      Zeigt das links gewählte Dashboard. Simulation im modernen Browser —
+      die endgültige Kontrolle macht <code>/diag</code> auf dem Gerät selbst.
     </div>
     <div id="previewWrap" class="preview-wrap">
       <iframe id="previewFrame" class="preview-frame" title="Vorschau"></iframe>

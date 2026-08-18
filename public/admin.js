@@ -8,12 +8,29 @@
 let schema = null;
 let config = null;
 let selectedId = null;
+let selectedDashboardId = null;
 let dirty = false;
 let entities = null;
 let pickerCallback = null;
 let pickerDomain = "";
 
 const $ = (id) => document.getElementById(id);
+
+// Alle Bausteinoperationen laufen auf dem gerade gewaehlten Dashboard.
+// Ein Helfer statt config.blocks an zwanzig Stellen.
+function currentDashboard() {
+  if (!config || !config.dashboards.length) {
+    return null;
+  }
+
+  return config.dashboards.find((d) => d.id === selectedDashboardId) ||
+    config.dashboards[0];
+}
+
+function blocks() {
+  const dashboard = currentDashboard();
+  return dashboard ? dashboard.blocks : [];
+}
 
 function setStatus(text, kind) {
   const el = $("status");
@@ -53,8 +70,16 @@ async function boot() {
     typeSelect.appendChild(option);
   });
 
-  selectedId = config.blocks.length ? config.blocks[0].id : null;
+  // Gewaehltes Dashboard ueber einen Reload hinweg halten, falls es noch
+  // existiert - sonst das erste.
+  if (!config.dashboards.some((d) => d.id === selectedDashboardId)) {
+    selectedDashboardId = config.dashboards[0].id;
+  }
 
+  selectedId = blocks().length ? blocks()[0].id : null;
+
+  renderDashboardList();
+  renderDashboardForm();
   renderBlockList();
   renderSettings();
   renderEditor();
@@ -68,7 +93,7 @@ function renderBlockList() {
   const list = $("blockList");
   list.innerHTML = "";
 
-  if (config.blocks.length === 0) {
+  if (blocks().length === 0) {
     const empty = document.createElement("p");
     empty.className = "hint";
     empty.textContent = "Noch keine Bausteine.";
@@ -76,7 +101,7 @@ function renderBlockList() {
     return;
   }
 
-  config.blocks.forEach((block, index) => {
+  blocks().forEach((block, index) => {
     const definition = schema[block.type] || { label: block.type };
 
     const item = document.createElement("li");
@@ -100,7 +125,7 @@ function renderBlockList() {
     buttons.className = "block-item-buttons";
     buttons.append(
       iconButton("↑", "Nach oben", (e) => { e.stopPropagation(); move(index, -1); }, index === 0),
-      iconButton("↓", "Nach unten", (e) => { e.stopPropagation(); move(index, 1); }, index === config.blocks.length - 1),
+      iconButton("↓", "Nach unten", (e) => { e.stopPropagation(); move(index, 1); }, index === blocks().length - 1),
       iconButton("⧉", "Duplizieren", (e) => { e.stopPropagation(); duplicate(index); }),
       iconButton("✕", "Löschen", (e) => { e.stopPropagation(); remove(index); })
     );
@@ -123,22 +148,22 @@ function iconButton(label, title, onClick, disabled) {
 function move(index, delta) {
   const target = index + delta;
 
-  if (target < 0 || target >= config.blocks.length) {
+  if (target < 0 || target >= blocks().length) {
     return;
   }
 
-  const [block] = config.blocks.splice(index, 1);
-  config.blocks.splice(target, 0, block);
+  const [block] = blocks().splice(index, 1);
+  blocks().splice(target, 0, block);
 
   markDirty();
   renderBlockList();
 }
 
 function duplicate(index) {
-  const copy = JSON.parse(JSON.stringify(config.blocks[index]));
+  const copy = JSON.parse(JSON.stringify(blocks()[index]));
   copy.id = "b" + Date.now().toString(36);
 
-  config.blocks.splice(index + 1, 0, copy);
+  blocks().splice(index + 1, 0, copy);
   selectedId = copy.id;
 
   markDirty();
@@ -147,17 +172,17 @@ function duplicate(index) {
 }
 
 function remove(index) {
-  const block = config.blocks[index];
+  const block = blocks()[index];
   const definition = schema[block.type] || { label: block.type };
 
   if (!confirm('Baustein "' + (block.title || definition.label) + '" löschen?')) {
     return;
   }
 
-  config.blocks.splice(index, 1);
+  blocks().splice(index, 1);
 
   if (selectedId === block.id) {
-    selectedId = config.blocks.length ? config.blocks[0].id : null;
+    selectedId = blocks().length ? blocks()[0].id : null;
   }
 
   markDirty();
@@ -173,7 +198,7 @@ $("btnAdd").onclick = () => {
     width: "full"
   });
 
-  config.blocks.push(block);
+  blocks().push(block);
   selectedId = block.id;
 
   markDirty();
@@ -181,10 +206,177 @@ $("btnAdd").onclick = () => {
   renderEditor();
 };
 
+// --------------------------------------------------- Dashboard-Verwaltung
+
+const DASHBOARD_FIELDS = [
+  { key: "name", label: "Name (Button-Beschriftung)", type: "text" },
+  { key: "shortName", label: "Kurzname für schmale Leisten (optional)", type: "text" },
+  { key: "seconds", label: "Anzeigedauer in Sekunden", type: "number", min: 5, max: 3600 },
+  { key: "inRotation", label: "An der Rotation teilnehmen", type: "checkbox" }
+];
+
+function renderDashboardList() {
+  const list = $("dashboardList");
+  list.innerHTML = "";
+
+  const active = currentDashboard();
+
+  config.dashboards.forEach((dashboard, index) => {
+    const item = document.createElement("li");
+    item.className = "dashboard-item" +
+      (active && dashboard.id === active.id ? " active" : "") +
+      (dashboard.inRotation ? "" : " paused");
+
+    item.onclick = () => {
+      selectedDashboardId = dashboard.id;
+      selectedId = blocks().length ? blocks()[0].id : null;
+      renderDashboardList();
+      renderDashboardForm();
+      renderBlockList();
+      renderEditor();
+      refreshPreview();
+    };
+
+    const main = document.createElement("div");
+    main.className = "dashboard-item-main";
+
+    const name = document.createElement("div");
+    name.className = "dashboard-item-name";
+    name.textContent = dashboard.name;
+
+    const meta = document.createElement("div");
+    meta.className = "dashboard-item-meta";
+    meta.textContent = dashboard.blocks.length + " Bausteine · " + dashboard.seconds + "s" +
+      (dashboard.inRotation ? "" : " · nicht in Rotation");
+
+    main.append(name, meta);
+
+    const buttons = document.createElement("div");
+    buttons.className = "block-item-buttons";
+    buttons.append(
+      iconButton("↑", "Nach oben", (e) => { e.stopPropagation(); moveDashboard(index, -1); }, index === 0),
+      iconButton("↓", "Nach unten", (e) => { e.stopPropagation(); moveDashboard(index, 1); },
+        index === config.dashboards.length - 1),
+      iconButton("⧉", "Duplizieren", (e) => { e.stopPropagation(); duplicateDashboard(index); }),
+      iconButton("✕", "Löschen", (e) => { e.stopPropagation(); removeDashboard(index); })
+    );
+
+    item.append(main, buttons);
+    list.appendChild(item);
+  });
+}
+
+function renderDashboardForm() {
+  const form = $("dashboardForm");
+  form.innerHTML = "";
+
+  const dashboard = currentDashboard();
+
+  if (!dashboard) {
+    return;
+  }
+
+  DASHBOARD_FIELDS.forEach((field) => {
+    form.appendChild(buildField(dashboard, field, () => renderDashboardList()));
+  });
+}
+
+function moveDashboard(index, delta) {
+  const target = index + delta;
+
+  if (target < 0 || target >= config.dashboards.length) {
+    return;
+  }
+
+  const [dashboard] = config.dashboards.splice(index, 1);
+  config.dashboards.splice(target, 0, dashboard);
+
+  markDirty();
+  renderDashboardList();
+}
+
+function duplicateDashboard(index) {
+  const copy = JSON.parse(JSON.stringify(config.dashboards[index]));
+
+  copy.id = "d" + Date.now().toString(36);
+  copy.name = copy.name + " (Kopie)";
+  // Neue Baustein-IDs, sonst kollidieren sie mit dem Original.
+  copy.blocks.forEach((block, i) => {
+    block.id = "b" + Date.now().toString(36) + i.toString(36);
+  });
+
+  config.dashboards.splice(index + 1, 0, copy);
+  selectedDashboardId = copy.id;
+  selectedId = copy.blocks.length ? copy.blocks[0].id : null;
+
+  markDirty();
+  renderAll();
+}
+
+function removeDashboard(index) {
+  if (config.dashboards.length === 1) {
+    alert("Das letzte Dashboard kann nicht gelöscht werden.");
+    return;
+  }
+
+  const dashboard = config.dashboards[index];
+
+  if (!confirm('Dashboard "' + dashboard.name + '" mit ' + dashboard.blocks.length +
+      ' Bausteinen löschen?')) {
+    return;
+  }
+
+  config.dashboards.splice(index, 1);
+
+  // Nav-Bausteine, die auf das geloeschte Dashboard zeigten, bereinigen -
+  // sonst blieben tote Buttons stehen.
+  config.dashboards.forEach((other) => {
+    other.blocks.forEach((block) => {
+      if (block.type === "nav" && Array.isArray(block.targets)) {
+        block.targets = block.targets.filter((id) => id !== dashboard.id);
+      }
+    });
+  });
+
+  if (selectedDashboardId === dashboard.id) {
+    selectedDashboardId = config.dashboards[0].id;
+    selectedId = blocks().length ? blocks()[0].id : null;
+  }
+
+  markDirty();
+  renderAll();
+}
+
+$("btnAddDashboard").onclick = () => {
+  const dashboard = {
+    id: "d" + Date.now().toString(36),
+    name: "Dashboard " + (config.dashboards.length + 1),
+    shortName: "",
+    seconds: 60,
+    inRotation: true,
+    blocks: []
+  };
+
+  config.dashboards.push(dashboard);
+  selectedDashboardId = dashboard.id;
+  selectedId = null;
+
+  markDirty();
+  renderAll();
+};
+
+function renderAll() {
+  renderDashboardList();
+  renderDashboardForm();
+  renderBlockList();
+  renderEditor();
+  refreshPreview();
+}
+
 // ------------------------------------------------------------- Editor
 
 function selectedBlock() {
-  return config.blocks.find((block) => block.id === selectedId) || null;
+  return blocks().find((block) => block.id === selectedId) || null;
 }
 
 function renderEditor() {
@@ -242,7 +434,7 @@ function widthField(block) {
   return wrap;
 }
 
-function buildField(block, field) {
+function buildField(block, field, onChange) {
   const wrap = document.createElement("div");
   wrap.className = field.type === "checkbox" ? "field field-inline" : "field";
 
@@ -253,7 +445,11 @@ function buildField(block, field) {
     const input = document.createElement("input");
     input.type = "checkbox";
     input.checked = block[field.key] !== false;
-    input.onchange = () => { block[field.key] = input.checked; markDirty(); };
+    input.onchange = () => {
+      block[field.key] = input.checked;
+      markDirty();
+      if (onChange) onChange();
+    };
     wrap.append(input, label);
     return wrap;
   }
@@ -267,6 +463,11 @@ function buildField(block, field) {
 
   if (field.type === "rows") {
     wrap.appendChild(rowsEditor(block, field));
+    return wrap;
+  }
+
+  if (field.type === "dashboards") {
+    wrap.appendChild(targetsEditor(block, field));
     return wrap;
   }
 
@@ -301,7 +502,9 @@ function buildField(block, field) {
     block[field.key] = field.type === "number" ? Number(input.value) : input.value;
     markDirty();
 
-    if (field.key === "title") {
+    if (onChange) {
+      onChange();
+    } else if (field.key === "title") {
       renderBlockList();
     }
   };
@@ -332,6 +535,44 @@ function entityInput(block, field) {
   };
 
   wrap.append(input, button);
+  return wrap;
+}
+
+// Zielauswahl fuer den Navigations-Baustein. Nichts angehakt heisst "alle" -
+// dann erscheinen spaeter angelegte Dashboards von selbst in der Leiste.
+function targetsEditor(block, field) {
+  const wrap = document.createElement("div");
+  wrap.className = "targets-editor";
+
+  const hint = document.createElement("p");
+  hint.className = "hint";
+  hint.textContent = "Nichts ausgewählt = alle Dashboards, auch später hinzugefügte.";
+  wrap.appendChild(hint);
+
+  const selected = block[field.key] || (block[field.key] = []);
+
+  config.dashboards.forEach((dashboard) => {
+    const label = document.createElement("label");
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = selected.indexOf(dashboard.id) !== -1;
+    input.onchange = () => {
+      const at = selected.indexOf(dashboard.id);
+
+      if (input.checked && at === -1) {
+        selected.push(dashboard.id);
+      } else if (!input.checked && at !== -1) {
+        selected.splice(at, 1);
+      }
+
+      markDirty();
+    };
+
+    label.append(input, document.createTextNode(dashboard.name));
+    wrap.appendChild(label);
+  });
+
   return wrap;
 }
 
@@ -457,7 +698,6 @@ function smallField(labelText, target, key, type) {
 const SETTING_FIELDS = [
   { key: "title", label: "Seitentitel", type: "text" },
   { key: "timezone", label: "Zeitzone (z. B. Europe/Berlin)", type: "text" },
-  { key: "refreshSeconds", label: "Neu laden alle … Sekunden", type: "number", min: 5, max: 3600 },
   { key: "baseFontSize", label: "Basis-Schriftgröße (px)", type: "number", min: 10, max: 80 },
   { key: "contentWidth", label: "Rasterbreite in px (0 = volle Breite)", type: "number", min: 0, max: 2000 },
   { key: "deviceDpi", label: "1:1-Pixel (target-densitydpi)", type: "checkbox" },
@@ -647,7 +887,10 @@ async function refreshPreview() {
 
   try {
     // POST statt GET: so zeigt die Vorschau den ungespeicherten Entwurf.
-    const res = await fetch("/preview", {
+    const dashboard = currentDashboard();
+    const query = dashboard ? "?d=" + encodeURIComponent(dashboard.id) : "";
+
+    const res = await fetch("/preview" + query, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(config)
@@ -686,10 +929,16 @@ $("btnSave").onclick = async () => {
 
     // Der Server normalisiert beim Speichern - danach neu zeichnen, damit
     // die Oberfläche exakt zeigt, was wirklich in der Datei steht.
-    if (!config.blocks.some((block) => block.id === selectedId)) {
-      selectedId = config.blocks.length ? config.blocks[0].id : null;
+    if (!config.dashboards.some((d) => d.id === selectedDashboardId)) {
+      selectedDashboardId = config.dashboards[0].id;
     }
 
+    if (!blocks().some((block) => block.id === selectedId)) {
+      selectedId = blocks().length ? blocks()[0].id : null;
+    }
+
+    renderDashboardList();
+    renderDashboardForm();
     renderBlockList();
     renderSettings();
     renderEditor();
