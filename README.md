@@ -67,6 +67,7 @@ startet trotzdem.
 | `/d/<id>` | Tolino | Ein bestimmtes Dashboard (Ziel der Navigations-Buttons). |
 | `/admin` | PC/Handy | Baukasten: Bausteine anlegen, sortieren, konfigurieren. |
 | `/preview?d=<id>` | intern | Gleiches HTML wie `/`, ohne Selbst-Reload (fürs Vorschau-iframe). |
+| `/action` | Tolino | Schaltaktion. **Nur POST**, danach 303-Weiterleitung. |
 | `/diag` | Tolino | Misst das Gerät aus und meldet die Werte an den Server. |
 | `/diag/result` | PC | Zeigt die empfangenen Messwerte als JSON. |
 
@@ -124,7 +125,8 @@ cp dashboard.example.json dashboard.json
 Ohne diese Datei startet der Server mit einer Minimalkonfiguration
 (Uhr + Hinweis auf `/admin`).
 
-Vorhandene Typen: `weather`, `sensors`, `bigvalue`, `clock`, `text`, `nav`, `spacer`.
+Vorhandene Typen: `weather`, `sensors`, `bigvalue`, `clock`, `text`, `action`,
+`nav`, `spacer`.
 
 **Einen neuen Typ hinzufügen** = ein Eintrag in `lib/blocks.js`:
 
@@ -143,6 +145,36 @@ dem Tablet. Server und Admin-UI müssen dafür nicht angefasst werden.
 
 Feldtypen für `fields`: `text`, `textarea`, `number`, `entity`, `select`,
 `checkbox`, `rows`, `dashboards`.
+
+## Schalten in Home Assistant
+
+Der Baustein **Schalter / Auslöser** kann umschalten (`switch`, `light`,
+`fan`, `input_boolean`) oder einmalig auslösen (`button`, `scene`, `script`,
+`input_button`). Umschalter zeigen den aktuellen Zustand und sind bei „an"
+invertiert dargestellt.
+
+Drei Schutzschichten, die verschiedene Probleme lösen:
+
+**POST statt Link.** Der Button ist ein Formular; nach der Aktion leitet der
+Server per 303 auf die normale Seite um. Das ist der wichtigste Teil: Das
+Panel lädt sich alle 20 Sekunden per Meta-Refresh neu. Stünde die Aktion in
+der URL, würde sie dadurch endlos wiederholt — ein einmal getippter
+„Jetzt füttern"-Button liefe dauerhaft weiter. `tools/legacy-check.js` prüft
+deshalb, dass keine Schaltaktion als GET-Link ausgeliefert wird.
+
+**Whitelist.** Nur Entitäten, die in einem Schaltbaustein stehen, sind
+auslösbar. Die Entity-ID aus dem Formular wird nie direkt an Home Assistant
+durchgereicht. Ohne Schaltbaustein ist nichts schaltbar.
+
+**Zeitsperre.** Dieselbe Aktion wird innerhalb weniger Sekunden nur einmal
+ausgeführt (pro Baustein einstellbar, Standard 5 s). Fängt versehentliches
+Doppeltippen ab — auf E-Ink sieht man den ersten Tipp erst nach dem
+Seitenaufbau. Gegen die Meta-Refresh-Wiederholung hilft sie **nicht**, das
+kann nur POST + Weiterleitung.
+
+> Es gibt weiterhin **kein Passwort**. Wer im LAN ist, kann die freigegebenen
+> Aktionen auslösen und über `/admin` weitere hinzufügen. Gib deshalb nur
+> frei, was unkritisch ist.
 
 ## Zeitzone
 
@@ -178,6 +210,7 @@ lib/render.js          Seitengerüst, Tabellen-Raster
 lib/format.js          Zahlen-, Zeit- und Wetterformatierung
 lib/html.js            HTML-Escaping
 lib/diag.js            Geräte-Diagnoseseite
+lib/actions.js         Schaltaktionen: Whitelist und Zeitsperre
 public/tablet.css      Stylesheet fürs Tolino
 public/admin.*         Baukasten-Oberfläche (moderner Browser)
 tools/legacy-check.js  Kompatibilitätsprüfung
@@ -187,6 +220,7 @@ dashboard.example.json Vorlage für die eigene dashboard.json
 ## Offen
 
 - Kein Passwortschutz. Im LAN kann jeder `/admin` öffnen, das Dashboard
-  umbauen und über den Entitäts-Picker alle HA-Entitäten sehen.
+  umbauen, über den Entitäts-Picker alle HA-Entitäten sehen und die
+  freigegebenen Schaltaktionen auslösen.
 - Rasterbreite und Schriftgrößen sind vorläufig, bis `/diag` auf dem Gerät
   gelaufen ist.

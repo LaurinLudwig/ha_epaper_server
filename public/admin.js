@@ -13,6 +13,7 @@ let dirty = false;
 let entities = null;
 let pickerCallback = null;
 let pickerDomain = "";
+let pickerDomains = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -531,7 +532,7 @@ function entityInput(block, field) {
       block[field.key] = entity.entity_id;
       input.value = entity.entity_id;
       markDirty();
-    });
+    }, field.domains);
   };
 
   wrap.append(input, button);
@@ -732,9 +733,10 @@ function foldSearch(text) {
     .replace(/[̀-ͯ]/g, "");
 }
 
-async function openPicker(domain, callback) {
+async function openPicker(domain, callback, domains) {
   pickerCallback = callback;
   pickerDomain = domain || "";
+  pickerDomains = Array.isArray(domains) && domains.length ? domains : null;
 
   $("pickerBackdrop").classList.remove("hidden");
   $("pickerSearch").value = "";
@@ -771,7 +773,12 @@ function renderDomainChips() {
   wrap.innerHTML = "";
 
   const counts = {};
-  entities.forEach((entity) => { counts[entity.domain] = (counts[entity.domain] || 0) + 1; });
+  entities.forEach((entity) => {
+    if (pickerDomains && pickerDomains.indexOf(entity.domain) === -1) {
+      return;
+    }
+    counts[entity.domain] = (counts[entity.domain] || 0) + 1;
+  });
 
   const domains = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
   domains.unshift("");
@@ -796,6 +803,11 @@ function renderPickerList() {
   const terms = foldSearch($("pickerSearch").value).split(/\s+/).filter(Boolean);
 
   const matches = entities.filter((entity) => {
+    // Feste Vorauswahl aus dem Baustein-Schema (z. B. nur schaltbare Domains).
+    if (pickerDomains && pickerDomains.indexOf(entity.domain) === -1) {
+      return false;
+    }
+
     if (pickerDomain && entity.domain !== pickerDomain) {
       return false;
     }

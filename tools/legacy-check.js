@@ -26,8 +26,35 @@ const HTML_RULES = [
   { re: /\bconst\s+[A-Za-z_$]/, msg: "const - kein ES6 auf dem Geraet" },
   { re: /`/, msg: "Template-String - kein ES6 auf dem Geraet" },
   { re: /\bfetch\s*\(/, msg: "fetch() gibt es nicht" },
-  { re: /\blocalStorage\b/, msg: "localStorage: vorhanden, aber auf dem Geraet unzuverlaessig" }
+  { re: /\blocalStorage\b/, msg: "localStorage: vorhanden, aber auf dem Geraet unzuverlaessig" },
+  // Eine Schaltaktion als GET-Link wuerde durch den Meta-Refresh des Panels
+  // endlos wiederholt. Sie MUSS als Formular mit POST ausgeliefert werden.
+  { re: /<a[^>]+href="\/action/i, msg: "Schaltaktion als GET-Link - wird vom Meta-Refresh endlos wiederholt" },
 ];
+
+// Jedes <form>-Tag einzeln pruefen. Eine zeilenweise Regex genuegt nicht: das
+// Tablet-HTML steht komplett auf einer Zeile, ein Lookahead wuerde dann ins
+// naechste Formular greifen und falschen Alarm schlagen.
+function checkActionForms(html) {
+  const problems = [];
+  const tags = html.match(/<form\b[^>]*>/gi) || [];
+
+  tags.forEach(function (tag) {
+    if (!/action\s*=\s*"\/action"/i.test(tag)) {
+      return;
+    }
+
+    if (!/method\s*=\s*"post"/i.test(tag)) {
+      problems.push({
+        line: 0,
+        msg: "Schalt-Formular ohne method=\"post\" - der Meta-Refresh wiederholt die Aktion sonst",
+        text: tag.slice(0, 90)
+      });
+    }
+  });
+
+  return problems;
+}
 
 const CSS_RULES = [
   { re: /position\s*:\s*fixed/i, msg: "position:fixed ist vor Android 3.0 defekt" },
@@ -144,7 +171,13 @@ http.get(target, function (res) {
   res.on("data", function (chunk) { html += chunk; });
 
   res.on("end", function () {
-    report([scan(html, HTML_RULES, "Tablet-HTML von " + target), cssResult]);
+    const htmlResult = scan(html, HTML_RULES, "Tablet-HTML von " + target);
+
+    checkActionForms(html).forEach(function (problem) {
+      htmlResult.problems.push(problem);
+    });
+
+    report([htmlResult, cssResult]);
   });
 }).on("error", function (err) {
   console.log("Server unter " + target + " nicht erreichbar (" + err.message + ").");

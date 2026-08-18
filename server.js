@@ -8,6 +8,7 @@ const ha = require("./lib/ha");
 const configStore = require("./lib/config");
 const render = require("./lib/render");
 const diag = require("./lib/diag");
+const actions = require("./lib/actions");
 const { BLOCK_TYPES, schema } = require("./lib/blocks");
 
 const PORT = Number(process.env.PORT) || 8080;
@@ -146,6 +147,62 @@ const server = http.createServer(function (req, res) {
 
     render.render(config, { dashboardId: wanted }, function (html) {
       sendText(res, 200, "text/html; charset=utf-8", html);
+    });
+    return;
+  }
+
+  // Schaltaktion. Bewusst NUR per POST erreichbar und mit anschliessender
+  // Weiterleitung (303) auf die normale Dashboard-Seite.
+  //
+  // Der Grund ist das Panel selbst: es laedt sich per Meta-Refresh alle 20s
+  // neu. Waere die Aktion ein GET-Link, wuerde sie dadurch endlos wiederholt -
+  // ein einmal getippter "Jetzt fuettern"-Button liefe dann dauerhaft weiter.
+  // Nach der Weiterleitung steht in der Adresszeile die harmlose Seite, der
+  // Reload wiederholt also nichts.
+  if (route === "/action") {
+    if (req.method !== "POST") {
+      res.writeHead(303, { "Location": "/", "Cache-Control": "no-store" });
+      res.end();
+      return;
+    }
+
+    readBody(req, 4096, function (err, body) {
+      if (err) {
+        sendText(res, 413, "text/plain; charset=utf-8", err.message);
+        return;
+      }
+
+      const form = new URLSearchParams(body || "");
+      const entity = form.get("entity") || "";
+      const from = form.get("from") || "";
+      const config = currentConfig();
+
+      function back() {
+        // 303 erzwingt GET beim Ziel - sonst wuerde der Browser den POST
+        // wiederholen. Cache-Buster, weil der Android-Browser sonst die
+        // alte Seite mit dem alten Zustand zeigt.
+        const target = configStore.findDashboard(config, from)
+          ? "/d/" + encodeURIComponent(from) + "?t=" + Date.now()
+          : "/?t=" + Date.now();
+
+        res.writeHead(303, { "Location": target, "Cache-Control": "no-store" });
+        res.end();
+      }
+
+      actions.run(config, entity, function (actionErr, info) {
+        if (actionErr) {
+          console.error("Aktion abgelehnt/fehlgeschlagen: " + entity + " - " + actionErr.message);
+        } else if (info.skipped) {
+          console.log("Aktion durch Zeitsperre übersprungen: " + entity);
+        } else {
+          console.log("Aktion ausgeführt: " + info.service.domain + "." +
+            info.service.service + " auf " + entity);
+        }
+
+        // Auch bei Fehlern zurueck zum Dashboard - ein Wandpanel darf nie
+        // auf einer Fehlerseite haengenbleiben.
+        back();
+      });
     });
     return;
   }
